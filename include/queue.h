@@ -3,14 +3,15 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define byte uint8_t
+typedef uint8_t byte;
 
-typedef struct {
+typedef struct byte_queue_t{
 	byte        *pchBuffer;
 	uint16_t    hwSize;
 	uint16_t    hwHead;
@@ -18,10 +19,17 @@ typedef struct {
 	uint16_t    hwLength;
 } byte_queue_t;
 
-void InitByteQueue(byte_queue_t *queue, byte *buffer, uint16_t size);
-bool IsByteQueueEmpty(const byte_queue_t *queue);
-bool EnQueueByte(byte_queue_t *queue, byte obj);
-bool DeQueueByte(byte_queue_t *queue, byte *addr);
+extern
+void init_byte_queue(byte_queue_t *ptQueue, byte *ptBuffer, uint16_t hwSize);
+
+extern
+bool is_byte_queue_empty(const byte_queue_t *ptQueue);
+
+extern
+bool enqueue_byte(byte_queue_t *ptQueue, byte chObj);
+
+extern
+bool dequeue_byte(byte_queue_t *ptQueue, byte *pchAddr);
 
 #ifdef __cplusplus
 }

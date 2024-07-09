@@ -1,37 +1,50 @@
 #include "queue.h"
 
-void InitByteQueue(byte_queue_t *queue, byte *buffer, uint16_t size)
+void init_byte_queue(byte_queue_t *ptQueue, byte *ptBuffer, uint16_t hwSize)
 {
-    queue->pchBuffer = buffer;
-    queue->hwSize = size;
-    queue->hwHead = 0;
-    queue->hwTail = 0;
-    queue-> hwLength = 0;
+    if (NULL == ptQueue || NULL == ptBuffer || 0 == hwSize) {
+        return;
+    }
+    ptQueue->pchBuffer = ptBuffer;
+    ptQueue->hwSize = hwSize;
+    ptQueue->hwHead = 0;
+    ptQueue->hwTail = 0;
+    ptQueue-> hwLength = 0;
 }
 
-bool IsByteQueueEmpty(const byte_queue_t *queue)
+bool is_byte_queue_empty(const byte_queue_t *ptQueue)
 {
-    return (queue->hwLength == 0);
+    if (NULL == ptQueue) {
+        // If the ptQueue is NULL, it means this is an empty queue.
+        return true;
+    }
+    return (ptQueue->hwLength == 0);
 }
 
-bool EnQueueByte(byte_queue_t *queue, byte obj)
+bool enqueue_byte(byte_queue_t *ptQueue, byte chObj)
 {
-    if (queue->hwLength < queue->hwSize) {
-        queue->pchBuffer[queue->hwTail] = obj;
-        queue->hwTail = (queue->hwTail + 1) % queue->hwSize;
-        queue->hwLength++;
+    if (NULL == ptQueue || NULL == ptQueue->pchBuffer) {
+        return false;
+    }
+    if (ptQueue->hwLength < ptQueue->hwSize) {
+        ptQueue->pchBuffer[ptQueue->hwTail] = chObj;
+        ptQueue->hwTail = (ptQueue->hwTail + 1) % ptQueue->hwSize;
+        ptQueue->hwLength++;
         return true;
     } else {
         return false;
     }
 }
 
-bool DeQueueByte(byte_queue_t *queue, byte *addr)
+bool dequeue_byte(byte_queue_t *ptQueue, byte *pchAddr)
 {
-    if (queue->hwLength > 0) {
-        *addr = queue->pchBuffer[queue->hwHead];
-        queue->hwHead = (queue->hwHead + 1) % queue->hwSize;
-        queue->hwLength--;
+    if (NULL == ptQueue || NULL == ptQueue->pchBuffer || NULL == pchAddr) {
+        return false;
+    }
+    if (ptQueue->hwLength > 0) {
+        *pchAddr = ptQueue->pchBuffer[ptQueue->hwHead];
+        ptQueue->hwHead = (ptQueue->hwHead + 1) % ptQueue->hwSize;
+        ptQueue->hwLength--;
         return true;
     } else {
         return false;
