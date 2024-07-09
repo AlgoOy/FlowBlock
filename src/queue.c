@@ -31,9 +31,8 @@ bool enqueue_byte(byte_queue_t *ptQueue, byte chObj)
         ptQueue->hwTail = (ptQueue->hwTail + 1) % ptQueue->hwSize;
         ptQueue->hwLength++;
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 bool dequeue_byte(byte_queue_t *ptQueue, byte *pchAddr)
@@ -46,7 +45,6 @@ bool dequeue_byte(byte_queue_t *ptQueue, byte *pchAddr)
         ptQueue->hwHead = (ptQueue->hwHead + 1) % ptQueue->hwSize;
         ptQueue->hwLength--;
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
