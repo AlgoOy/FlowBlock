@@ -20,7 +20,7 @@ typedef struct byte_queue_t{
 } byte_queue_t;
 
 extern
-void init_byte_queue(byte_queue_t *ptQueue, byte *ptBuffer, uint16_t hwSize);
+void byte_queue_init(byte_queue_t *ptQueue, byte *ptBuffer, uint16_t hwSize);
 
 extern
 bool is_byte_queue_empty(const byte_queue_t *ptQueue);
@@ -34,6 +34,5 @@ bool dequeue_byte(byte_queue_t *ptQueue, byte *pchAddr);
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

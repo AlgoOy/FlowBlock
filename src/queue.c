@@ -1,6 +1,6 @@
 #include "queue.h"
 
-void init_byte_queue(byte_queue_t *ptQueue, byte *ptBuffer, uint16_t hwSize)
+void byte_queue_init(byte_queue_t *ptQueue, byte *ptBuffer, uint16_t hwSize)
 {
     if (NULL == ptQueue || NULL == ptBuffer || 0 == hwSize) {
         return;
