@@ -71,7 +71,8 @@ byte_fifo_t *__byte_fifo_init(byte_fifo_cfg_t *ptCFG, byte_fifo_t *ptThis)
     memset(ptThis, 0, sizeof(byte_fifo_t));
 
     *ptThis = (byte_fifo_t) {
-        .chState = 0,
+        .chAddByteState = 0,
+        .chFlushState = 0,
         .ptMemBlk = tCFG.ptMemBlk,
         .ptBlk = NULL,
         .tQueue = {0},
@@ -134,32 +135,66 @@ void byte_fifo_deinit(byte_fifo_t *ptThis)
 #include "hardware.h"
 
 ARM_NONNULL(1)
-void byte_fifo_flush(byte_fifo_t *ptThis)
+fsm_rt_t byte_fifo_flush(byte_fifo_t *ptThis)
 {
     assert(NULL != ptThis);
     
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    int ret1 = HAL_DMA_GetState(&hdma_usart1_tx);
-    if (ret1 == HAL_DMA_STATE_BUSY) {
-        __set_PRIMASK(primask);
-        return;
+    enum {
+        START = 0,
+        IS_DMA_OK,
+        IS_UART_OK,
+        IS_BLK_NULL,
+        FETCH_FIFO_BLK,
+        TRANSMIT_BLK,
+    };
+    
+//    uint32_t primask = __get_PRIMASK();
+//    __disable_irq();
+    
+//    __set_PRIMASK(primask);
+    
+    switch (this.chFlushState) {
+        case START:
+            this.chFlushState = IS_DMA_OK;
+        case IS_DMA_OK:
+            if (this.bIsDMABusy) {
+                this.chFlushState = START;
+                break;
+            }
+            this.chFlushState = IS_UART_OK;
+        case IS_UART_OK:
+            if (this.bIsUARTBusy) {
+                this.chFlushState = START;
+                break;
+            }
+            this.chFlushState = IS_BLK_NULL;
+        case IS_BLK_NULL:
+            if (NULL != this.ptBlk) {
+                this.chFlushState = TRANSMIT_BLK;
+                break;
+            }
+            this.chFlushState = FETCH_FIFO_BLK;
+        case FETCH_FIFO_BLK:
+            this.ptBlk = mem_blk_fifo_fetch(this.ptMemBlk);
+            if (NULL == this.ptBlk) {
+                this.chFlushState = START;
+                break;
+            }
+            this.chFlushState = TRANSMIT_BLK;
+        case TRANSMIT_BLK:
+            if (this.fnTransmit(this.ptBlk->chMemory, this.ptBlk->tSizeInByte)) {
+                this.bIsDMABusy = true;
+                this.bIsUARTBusy = true;
+                this.chFlushState = START;
+                return fsm_rt_cpl;
+            }
+            this.chFlushState = START;
+            break;            
     }
-    this.ptBlk = mem_blk_fifo_fetch(this.ptMemBlk);
-    if (NULL == this.ptBlk) {
-        __set_PRIMASK(primask);
-        return;
-    }
-    int ret = HAL_OK;
-    do {
-        ret = HAL_UART_Transmit_DMA(&huart1, this.ptBlk->chMemory, this.ptBlk->tSizeInByte);
-        if (HAL_OK != ret) {
-            HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_7);
-        }
-    } while(ret != HAL_OK);
-    __set_PRIMASK(primask);
+    
+    return fsm_rt_on_going;
 }
-
+    
 ARM_NONNULL(1)
 void byte_fifo_dma_irq_handler(byte_fifo_t *ptThis)
 {
@@ -167,6 +202,17 @@ void byte_fifo_dma_irq_handler(byte_fifo_t *ptThis)
     
     mem_blk_fifo_free(this.ptMemBlk, this.ptBlk);
     this.ptBlk = NULL;
+    this.bIsDMABusy = false;
+    
+    byte_fifo_flush(ptThis);
+}
+
+ARM_NONNULL(1)
+void byte_fifo_uart_irq_handler(byte_fifo_t *ptThis)
+{
+    assert(NULL != ptThis);
+    
+    this.bIsUARTBusy = false;
     
     byte_fifo_flush(ptThis);
 }
@@ -174,27 +220,31 @@ void byte_fifo_dma_irq_handler(byte_fifo_t *ptThis)
 ARM_NONNULL(1)
 fsm_rt_t byte_fifo_add_bytes(byte_fifo_t *ptThis, byte chData)
 {
+    assert(NULL != ptThis);
+    
     enum {
         START = 0,
         EN_QUEUE,
         NEW_QUEUE,
+        FLUSH_BLK,
+        INIT_QUEUE,
     };
     
-    switch (this.chState) {
+    switch (this.chAddByteState) {
         case START:
         {
-            this.chState = EN_QUEUE;
+            this.chAddByteState = EN_QUEUE;
         }
         case EN_QUEUE:
         {
             if (enqueue_byte(&this.tQueue, chData)) {
-                this.chState = START;
+                this.chAddByteState = START;
                 return fsm_rt_cpl;
             }
             mem_blk_t *ptBlk = (mem_blk_t *)((uintptr_t)this.tQueue.pchBuffer - offsetof(mem_blk_t, chMemory));
             mem_blk_fifo_append(this.ptMemBlk, ptBlk);
             byte_fifo_flush(ptThis);
-            this.chState = NEW_QUEUE;
+            this.chAddByteState = NEW_QUEUE;
         }
         case NEW_QUEUE:
         {
@@ -206,10 +256,22 @@ fsm_rt_t byte_fifo_add_bytes(byte_fifo_t *ptThis, byte chData)
                 };
                 byte_queue_t *ptQueue = byte_queue_init(&tByteQueueCFG, &this.tQueue);
                 if (NULL != ptQueue) {
-                    this.chState = EN_QUEUE;
+                    this.chAddByteState = EN_QUEUE;
+                    break;
+                } else {
+                    mem_blk_fifo_append(this.ptMemBlk, ptBlk);
+                    break;
                 }
             }
+            this.chAddByteState = FLUSH_BLK;
         }
+        case FLUSH_BLK:
+        {
+            if (fsm_rt_cpl != byte_fifo_flush(ptThis)) {
+                break;
+            }
+            this.chAddByteState = NEW_QUEUE;
+        }  
     }
     
     return fsm_rt_on_going;

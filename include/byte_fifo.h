@@ -21,17 +21,18 @@ extern "C" {
 
 typedef struct byte_fifo_cfg_t {
     mem_blk_fifo_t *ptMemBlk;
-    bool (*fnTransmit)(byte *pchData, size_t tSizeInByte);
+    bool (*fnTransmit)(const byte *pchData, size_t tSizeInByte);
 } byte_fifo_cfg_t;
 
 typedef struct byte_fifo_t {
-    uint8_t chState;
+    uint8_t chAddByteState;
+    uint8_t chFlushState;
     mem_blk_fifo_t *ptMemBlk;
     mem_blk_t *ptBlk;
     byte_queue_t tQueue;
     bool bIsDMABusy;
     bool bIsUARTBusy;
-    bool (*fnTransmit)(byte *pchData, size_t tSizeInByte);
+    bool (*fnTransmit)(const byte *pchData, size_t tSizeInByte);
     struct {
         bool ctl;
         bool buffer;
@@ -55,11 +56,15 @@ fsm_rt_t byte_fifo_add_bytes(byte_fifo_t *ptByteFifo, byte chData);
 
 ARM_NONNULL(1)
 extern
-void byte_fifo_flush(byte_fifo_t *ptByteFifo);
+fsm_rt_t byte_fifo_flush(byte_fifo_t *ptByteFifo);
 
 ARM_NONNULL(1)
 extern
 void byte_fifo_dma_irq_handler(byte_fifo_t *ptByteFifo);
+
+ARM_NONNULL(1)
+extern
+void byte_fifo_uart_irq_handler(byte_fifo_t *ptByteFifo);
 
 #ifdef __cplusplus
 }
