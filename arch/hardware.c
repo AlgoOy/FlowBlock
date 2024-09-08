@@ -45,3 +45,64 @@ void uart_tx_cpl_callback(UART_HandleTypeDef *hdma)
         byte_fifo_user_report_transmit_cpl(&g_tByteFifoCB);
     }
 }
+
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == huart1.Instance)
+    {
+        while(fsm_rt_cpl != byte_fifo_receive(&g_tByteFifoCB, __HAL_DMA_GET_COUNTER(huart1.hdmarx)));
+    }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == huart1.Instance)
+    {
+        while(fsm_rt_cpl != byte_fifo_receive(&g_tByteFifoCB, __HAL_DMA_GET_COUNTER(huart1.hdmarx)));
+    }
+}
+
+void UART_IDLE_IRQHandler(UART_HandleTypeDef *huart)
+{
+
+}
+
+bool uart_rx_fsm_init(uart_rx_ctl_t *ptThis, uart_rx_ctl_cfg_t *ptCFG)
+{
+    assert(NULL != ptThis);
+    assert(NULL != ptCFG);
+    assert(NULL != ptCFG->ptHandleUart);
+    
+    *ptThis = (uart_rx_ctl_t) {
+        .chState = 0,
+        .tPrePos = 0,
+        .tCFG = *ptCFG,
+    };
+    return true;
+}
+
+fsm_rt_t uart_rx_data_migration(uart_rx_ctl_t *ptThis)
+{
+    enum {
+        START = 0,
+        MOVE_DATA,
+        NOTIFY_RX_CPL,
+        
+    };
+    
+    fsm_rt_t emRetStatus = fsm_rt_on_going;
+    
+    switch(this.chState) {
+        case START:
+        {
+            this.chState = MOVE_DATA;
+            // break;
+        }
+        case MOVE_DATA:
+        {
+            while(fsm_rt_cpl != byte_fifo_receive(&g_tByteFifoCB, __HAL_DMA_GET_COUNTER(this.tCFG.ptHandleUart->hdmarx)));
+        }
+    }
+    
+    return emRetStatus;
+}

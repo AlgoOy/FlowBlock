@@ -40,6 +40,8 @@ mem_blk_fifo_t *mem_blk_fifo_init(mem_blk_fifo_t *ptThis, mem_blk_fifo_cfg_t *pt
         *ptMemBlk = (mem_blk_t) {
             .ptNext = this.ptFreeList,
             .tSizeInByte = ptCFG->tSizeInByte,
+            .tSizeUsedInByte = 0,
+            .tSizeUsedInByte = 0,
         };
         
         this.ptFreeList = ptMemBlk;

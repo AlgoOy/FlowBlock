@@ -17,6 +17,16 @@ extern "C" {
 /*============================ MACROFIED FUNCTIONS ===========================*/
 /*============================ TYPES =========================================*/
 
+typedef struct uart_rx_ctl_cfg_t {
+    UART_HandleTypeDef  *ptHandleUart;
+} uart_rx_ctl_cfg_t;
+
+typedef struct uart_rx_ctl_t {
+    uint8_t             chState;
+    size_t              tPrePos;
+    uart_rx_ctl_cfg_t   tCFG;
+} uart_rx_ctl_t;
+
 /*============================ GLOBAL VARIABLES ==============================*/
 /*============================ PROTOTYPES ====================================*/
 

@@ -20,7 +20,8 @@ extern "C" {
 
 typedef struct mem_blk_t {
     struct mem_blk_t *ptNext;
-    size_t tSizeInByte;
+    uint16_t tSizeInByte;       // DMA cache buffer max 64KB
+    uint16_t tSizeUsedInByte; 
     uint8_t chMemory[];
 } mem_blk_t;
 

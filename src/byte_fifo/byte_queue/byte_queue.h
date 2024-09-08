@@ -34,7 +34,11 @@ typedef struct byte_queue_t{
 
 ARM_NONNULL(1, 2)
 extern
-byte_queue_t *byte_queue_init(byte_queue_t *ptQueue, byte_queue_cfg_t *ptCFG);
+byte_queue_t *byte_queue_init_empty(byte_queue_t *ptThis, byte_queue_cfg_t *ptCFG);
+
+ARM_NONNULL(1, 2)
+extern
+byte_queue_t *byte_queue_init_full(byte_queue_t *ptThis, byte_queue_cfg_t *ptCFG);
 
 ARM_NONNULL(1)
 extern

@@ -143,11 +143,17 @@ extern "C" {
 
 typedef uint32_t global_interrupt_status_t;
 
-typedef enum fsm_rt_t {
+typedef enum {
     fsm_rt_err      = -1,
     fsm_rt_on_going = 0,
     fsm_rt_cpl      = 1,
 } fsm_rt_t;
+
+typedef enum {
+    ERR_MEM_BLOCK_NOT_ENOUGH    = -2,
+    ERR_UNKNOWN                 = -1,
+    ERR_NONE                    = 0,
+} err_t;
 
 /*============================ GLOBAL VARIABLES ==============================*/
 /*============================ PROTOTYPES ====================================*/
