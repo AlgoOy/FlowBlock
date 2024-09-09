@@ -19,16 +19,14 @@
 extern byte_fifo_t g_tByteFifoCB;
 
 ARM_NONNULL(1)
-bool uart_transmit_by_dma(const uint8_t *pchData, size_t tSizeInByte) {
+bool uart_transmit_by_dma(uint8_t *const pchData, const uint16_t hwSizeInByte) 
+{
     assert(NULL != pchData);
     
-    if (tSizeInByte > UINT16_MAX) {
-        return false;
-    }
-    
-    if (HAL_OK == HAL_UART_Transmit_DMA(&huart1, pchData, tSizeInByte)) {
+    if (HAL_OK == HAL_UART_Transmit_DMA(&huart1, pchData, hwSizeInByte)) {
         return true;
     }
+
     return false;
 }
 
@@ -46,63 +44,31 @@ void uart_tx_cpl_callback(UART_HandleTypeDef *hdma)
     }
 }
 
-void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
+bool uart_receive_by_dma(uint8_t *const pchData, const uint16_t hwSizeInByte)
 {
-    if (huart->Instance == huart1.Instance)
-    {
-        while(fsm_rt_cpl != byte_fifo_receive(&g_tByteFifoCB, __HAL_DMA_GET_COUNTER(huart1.hdmarx)));
+    assert(NULL != pchData);
+
+    if (HAL_OK == HAL_UART_Receive_DMA(&huart1, pchData, hwSizeInByte)) {
+        return true;
     }
+
+    return false;
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+void dma_rx_cpl_callback(DMA_HandleTypeDef *hdma)
 {
-    if (huart->Instance == huart1.Instance)
-    {
-        while(fsm_rt_cpl != byte_fifo_receive(&g_tByteFifoCB, __HAL_DMA_GET_COUNTER(huart1.hdmarx)));
-    }
+    uint16_t hwRemainingBytesSpace = __HAL_DMA_GET_COUNTER(&hdma_usart1_tx);
+    
+    HAL_UART_DMAStop(&huart1);
+    
+    byte_fifo_user_report_receive_cpl(&g_tByteFifoCB, hwRemainingBytesSpace);
 }
 
-void UART_IDLE_IRQHandler(UART_HandleTypeDef *huart)
+void uart_rx_cpl_callback(UART_HandleTypeDef *hdma)
 {
-
-}
-
-bool uart_rx_fsm_init(uart_rx_ctl_t *ptThis, uart_rx_ctl_cfg_t *ptCFG)
-{
-    assert(NULL != ptThis);
-    assert(NULL != ptCFG);
-    assert(NULL != ptCFG->ptHandleUart);
+    uint16_t hwRemainingBytesSpace = __HAL_DMA_GET_COUNTER(&hdma_usart1_tx);
     
-    *ptThis = (uart_rx_ctl_t) {
-        .chState = 0,
-        .tPrePos = 0,
-        .tCFG = *ptCFG,
-    };
-    return true;
-}
-
-fsm_rt_t uart_rx_data_migration(uart_rx_ctl_t *ptThis)
-{
-    enum {
-        START = 0,
-        MOVE_DATA,
-        NOTIFY_RX_CPL,
-        
-    };
+    HAL_UART_DMAStop(&huart1);
     
-    fsm_rt_t emRetStatus = fsm_rt_on_going;
-    
-    switch(this.chState) {
-        case START:
-        {
-            this.chState = MOVE_DATA;
-            // break;
-        }
-        case MOVE_DATA:
-        {
-            while(fsm_rt_cpl != byte_fifo_receive(&g_tByteFifoCB, __HAL_DMA_GET_COUNTER(this.tCFG.ptHandleUart->hdmarx)));
-        }
-    }
-    
-    return emRetStatus;
+    byte_fifo_user_report_receive_cpl(&g_tByteFifoCB, hwRemainingBytesSpace);
 }

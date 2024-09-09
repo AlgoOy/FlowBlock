@@ -35,11 +35,17 @@ extern DMA_HandleTypeDef hdma_usart1_tx;
 
 ARM_NONNULL(1)
 extern
-bool uart_transmit_by_dma(const uint8_t *pchData, size_t tSizeInByte);
+bool uart_transmit_by_dma(uint8_t *const pchData, const uint16_t hwSizeInByte);
 
+ARM_NONNULL(1)
+extern
+bool uart_receive_by_dma(uint8_t *const pchData, const uint16_t hwSizeInByte);
+
+ARM_NONNULL(1)
 extern
 void dma_tx_cpl_callback(DMA_HandleTypeDef *hdma);
 
+ARM_NONNULL(1)
 extern
 void uart_tx_cpl_callback(UART_HandleTypeDef *hdma);
 

@@ -27,7 +27,7 @@ typedef struct mem_blk_t {
 
 typedef struct mem_blk_fifo_cfg_t {
     size_t tNumOfMemBlk;
-    size_t tSizeInByte;
+    uint16_t tSizeInByte;
     mem_blk_t **pptMemBlk;
 } mem_blk_fifo_cfg_t;
 

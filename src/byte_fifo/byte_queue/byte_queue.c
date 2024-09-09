@@ -77,6 +77,14 @@ bool is_byte_queue_empty(const byte_queue_t *ptThis)
 }
 
 ARM_NONNULL(1)
+size_t byte_queue_length(const byte_queue_t *ptThis)
+{
+    assert(NULL != ptThis);
+    
+    return this.tLength;
+}
+
+ARM_NONNULL(1)
 bool enqueue_byte(byte_queue_t *ptThis, uint8_t chObj)
 {
     assert(NULL != ptThis);
@@ -87,8 +95,8 @@ bool enqueue_byte(byte_queue_t *ptThis, uint8_t chObj)
     // optimize %
     __IRQ_SAFE {
         if (this.tLength < this.tCFG.tSize) {
-            this.tCFG.pchBuffer[this.tTail] = chObj;
-            if (++this.tTail >= this.tCFG.tSize) {
+            this.tCFG.pchBuffer[this.tTail++] = chObj;  // TODO: 无保护指针
+            if (this.tTail >= this.tCFG.tSize) {
                 this.tTail = 0;
             }
             this.tLength++;
@@ -110,8 +118,8 @@ bool dequeue_byte(byte_queue_t *ptThis, uint8_t *pchAddr)
     
     __IRQ_SAFE {
         if (this.tLength > 0) {
-            *pchAddr = this.tCFG.pchBuffer[this.tHead];
-            if (++this.tHead >= this.tCFG.tSize) {
+            *pchAddr = this.tCFG.pchBuffer[this.tHead++];
+            if (this.tHead >= this.tCFG.tSize) {
                 this.tHead = 0;
             }
             this.tLength--;

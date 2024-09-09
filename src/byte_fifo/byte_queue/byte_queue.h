@@ -50,6 +50,10 @@ bool is_byte_queue_empty(const byte_queue_t *ptQueue);
 
 ARM_NONNULL(1)
 extern
+size_t byte_queue_length(const byte_queue_t *ptThis);
+
+ARM_NONNULL(1)
+extern
 bool enqueue_byte(byte_queue_t *ptQueue, uint8_t chObj);
 
 ARM_NONNULL(1, 2)
